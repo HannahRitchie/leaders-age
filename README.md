@@ -7,10 +7,10 @@ Open `index.html` (or the published site's home page) to see every chart with a 
 | File | Chart |
 |---|---|
 | `leader-age-gap-dotplot.html` | Which countries have the largest age gap between leader and the population? |
-| `leader-age-swarm.html` | Leader age, by region (or political regime) |
+| `leader-age-swarm.html` | What is the age of each country's leader? (by region or political regime) |
 | `leader-age-range.html` | How old are leaders in each region? (youngest, median, oldest) |
 | `leaders-vs-population-scatter.html` | Do older populations have older leaders? |
-| `leaders-gantt-world.html` | How old are the world's leaders, and how long have they led? |
+| `leaders-gantt-world.html` | How old are the world's leaders, and how long have they been in power? |
 | `leader-age-gap-map.html` | How far apart in age are leaders and the people they lead? |
 
 Each page is a single self-contained HTML file. Leader ages are calculated in the browser from birth dates, so they update on their own; the list of leaders itself is a snapshot from 7 October 2026.
