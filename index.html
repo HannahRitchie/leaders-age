@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leader age charts: embed codes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+<style>
+  body { margin:0; font-family: Inter, system-ui, sans-serif; color:#1c2330; background:#fbfbf9; line-height:1.5; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 20px 56px; }
+  h1 { font-size: 1.7rem; letter-spacing: -0.02em; margin: 0 0 6px; }
+  p.lede { color:#6b7380; margin: 0 0 28px; }
+  .card { border-top: 1px solid #e3e5e8; padding: 18px 0; }
+  .card h2 { font-size: 1.05rem; margin: 0 0 2px; }
+  .card .desc { color:#6b7380; font-size: .9rem; margin: 0 0 10px; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+  a.btn, button { font: inherit; font-size:.875rem; padding:5px 12px; border-radius:999px; border:1px solid #cfd3d8; background:#eef0f2; color:#1c2330; cursor:pointer; text-decoration:none; }
+  button.primary { background:#1c2330; color:#fbfbf9; border-color:#1c2330; }
+  textarea { width:100%; box-sizing:border-box; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; padding:8px; border:1px solid #cfd3d8; border-radius:4px; background:#fff; color:#1c2330; resize:vertical; }
+  .small { color:#6b7380; font-size:.8125rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Leader age charts</h1>
+  <p class="lede">Copy an iframe code below into Substack (or any page that accepts iframes). The links and codes are built from the address of this page, so they work wherever you host the folder.</p>
+  <div id="cards"></div>
+  <p class="small">Change <code>height</code> if you see scrollbars or blank space. Phones need more height than desktop. Remove <code>embed=1</code> from the address to show the subtitle and notes, and <code>controls=0</code> to bring back the buttons and menus.</p>
+</main>
+<script>
+  const CHARTS = [
+    { file: "leader-age-gap-dotplot.html", title: "Which countries have the largest age gap between leader and the population?", desc: "Dot plot of every country, by region.", q: "?embed=1&controls=0&title=1", h: 1060 },
+    { file: "leader-age-swarm.html", title: "Leader age, by region (or political regime)", desc: "Dot plot of every country. Add &group=regime for political regime.", q: "?embed=1&controls=0&title=1", h: 960 },
+    { file: "leader-age-range.html", title: "How old are leaders in each region?", desc: "Youngest, median and oldest leader by region. Add &group=regime for political regime.", q: "?embed=1&controls=0&title=1", h: 780 },
+    { file: "leaders-vs-population-scatter.html", title: "Do older populations have older leaders?", desc: "Scatterplot of leader age against population median age. Add &view=africa (or asia, europe, g20 …) to focus on a group.", q: "?embed=1&controls=0&title=1", h: 850 },
+    { file: "leaders-gantt-world.html", title: "How old are the world's leaders, and how long have they led?", desc: "Age and time in office. Choose a group with &view=g20, africa, asia, europe, north-america, south-america or oceania.", q: "?view=g20&embed=1&controls=0&compact=1&title=1", h: 760 },
+    { file: "leader-age-gap-map.html", title: "How far apart in age are leaders and the people they lead?", desc: "World map. Add &view=africa (or asia, europe …) to zoom in.", q: "?embed=1&title=1", h: 640 }
+  ];
+  const base = new URL(".", location.href).href;
+  document.getElementById("cards").innerHTML = CHARTS.map((c, i) => {
+    const url = base + c.file + c.q;
+    const code = `<iframe src="${url}" width="100%" height="${c.h}" style="border:0" loading="lazy" title="${c.title.replace(/"/g, "&quot;")}"></iframe>`;
+    return `<section class="card">
+      <h2>${c.title}</h2><p class="desc">${c.desc}</p>
+      <div class="row"><a class="btn" href="${url}" target="_blank" rel="noopener">Open embed view</a>
+      <a class="btn" href="${base + c.file}" target="_blank" rel="noopener">Open full page</a>
+      <button class="primary" data-i="${i}">Copy iframe code</button></div>
+      <textarea id="t${i}" rows="3" readonly>${code.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</textarea></section>`;
+  }).join("");
+  document.getElementById("cards").addEventListener("click", e => {
+    const b = e.target.closest("button[data-i]"); if (!b) return;
+    const t = document.getElementById("t" + b.dataset.i); t.select();
+    (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).catch(() => document.execCommand("copy"));
+    const old = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = old, 1400);
+  });
+</script>
+</body>
+</html>

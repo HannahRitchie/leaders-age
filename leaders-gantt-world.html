@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>World leaders: age and time in office</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --bg: #fbfbf9;
+    --ink: #1c2330;
+    --muted: #6b7380;
+    --grid: #e3e5e8;
+    --bar: #b4232a;
+    --bar-hi: #6e1015;
+    --track: #eef0f2;
+    --chip-on-bg: #1c2330;
+    --chip-on-ink: #fbfbf9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181f; --ink: #e8eaee; --muted: #8f97a4; --grid: #2a303a;
+      --bar: #e5575c; --bar-hi: #f6aeb1; --track: #1c222b;
+      --chip-on-bg: #e8eaee; --chip-on-ink: #14181f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181f; --ink: #e8eaee; --muted: #8f97a4; --grid: #2a303a;
+    --bar: #e5575c; --bar-hi: #f6aeb1; --track: #1c222b;
+    --chip-on-bg: #e8eaee; --chip-on-ink: #14181f;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: inherit; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.45;
+  }
+  main { max-width: 1000px; margin: 0 auto; padding: 32px 20px 48px; }
+  h1 {
+    font-weight: 700; font-size: clamp(1.5rem, 3.6vw, 2.1rem);
+    line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.022em;
+  }
+  .lede { color: var(--muted); margin: 0 0 22px; max-width: none; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip {
+    font: inherit; font-size: 0.9375rem; color: var(--ink); background: var(--track);
+    border: 1px solid var(--grid); border-radius: 999px; padding: 5px 14px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--chip-on-bg); color: var(--chip-on-ink); border-color: var(--chip-on-bg); }
+  .chip:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--bar); outline-offset: 2px; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; margin-bottom: 12px; }
+  .controls label { font-size: 0.9375rem; color: var(--muted); }
+  .controls select, .controls input {
+    font: inherit; color: var(--ink); background: var(--track);
+    border: 1px solid var(--grid); border-radius: 4px; padding: 5px 8px; margin-left: 6px;
+  }
+  .count { font-size: 0.9375rem; color: var(--muted); margin-left: auto; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0 0 8px; font-size: 0.875rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .sw { width: 22px; height: 10px; background: var(--bar); border-radius: 2px; }
+  .sw.edge { width: 3px; height: 14px; background: var(--bar-hi); }
+
+  .axis {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+    background: var(--bg); border-bottom: 1px solid var(--grid);
+    display: grid; grid-template-columns: 210px 1fr; column-gap: 16px; padding: 6px 0 4px;
+  }
+  .axis { align-items: center; }
+  .axis .ticks { position: relative; height: 20px; }
+  .axis-label { font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
+  .tick { position: absolute; top: 0; transform: translateX(-50%); font-size: 0.8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .row {
+    display: grid; grid-template-columns: 210px 1fr; align-items: center;
+    column-gap: 16px; padding: 5px 0;
+  }
+  .who .country { font-weight: 600; }
+  .who .detail { color: var(--muted); font-size: 0.8125rem; line-height: 1.3; }
+  .track { position: relative; height: 26px; background: var(--track); border-radius: 3px; }
+  .grid-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--grid); }
+  .bar {
+    position: absolute; top: 4px; bottom: 4px; background: var(--bar);
+    border-radius: 2px; min-width: 3px;
+  }
+  .bar.current::after {
+    content: ""; position: absolute; right: 0; top: -4px; bottom: -4px;
+    width: 3px; background: var(--bar-hi); border-radius: 1px;
+  }
+  .lbl {
+    position: absolute; top: 50%; font-size: 0.8125rem; white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .lbl.start { color: var(--muted); transform: translate(-100%, -50%); padding-right: 8px; }
+  .lbl.now { font-weight: 700; transform: translateY(-50%); padding-left: 10px; }
+  .empty { padding: 28px 0; color: var(--muted); }
+
+  details.notes { margin-top: 28px; border-top: 1px solid var(--grid); padding-top: 12px; max-width: none; }
+  details.notes > summary {
+    cursor: pointer; color: var(--ink); font-weight: 600; font-size: 0.9375rem;
+    list-style: none; display: inline-flex; align-items: center; gap: 8px; padding: 4px 0;
+  }
+  details.notes > summary::-webkit-details-marker { display: none; }
+  details.notes > summary::before {
+    content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg); transition: transform 0.15s; margin-right: 2px;
+  }
+  details.notes[open] > summary::before { transform: rotate(45deg); }
+  details.notes > summary:focus-visible { outline: 2px solid var(--bar); outline-offset: 3px; }
+  details.notes > :not(summary) { max-width: 74ch; }
+  .notes { margin-top: 30px; color: var(--muted); font-size: 0.875rem; max-width: 74ch; }
+  .notes h2 { font-size: 1rem; color: var(--ink); margin: 18px 0 6px; font-family: inherit; }
+  .notes p { margin: 0 0 8px; }
+
+  /* Embed mode (set with URL options, see the script) */
+  .embed-foot { display: none; color: var(--muted); font-size: 0.75rem; margin: 12px 0 0; }
+  html.embed .lede, html.embed .notes { display: none; }
+  html.embed:not(.show-title) h1 { display: none; }
+  html.embed .embed-foot { display: block; }
+  html.embed main { padding: 14px 16px; }
+  html.no-controls .filters, html.no-controls .controls { display: none; }
+  html.compact .who .detail { display: none; }
+  html.compact .row { padding: 3px 0; }
+  html.compact .track { height: 22px; }
+  html.compact .bar { top: 3px; bottom: 3px; }
+
+  @media (max-width: 640px) {
+    .axis { grid-template-columns: 1fr; }
+    .axis { row-gap: 2px; }
+    .row { grid-template-columns: 1fr; row-gap: 3px; padding: 7px 0 9px; }
+    .count { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">How old are the world's leaders, and how long have they led?</h1>
+  <p class="lede">Each bar starts at the leader's age when they took office and ends at their age today, so its length is their time in office. Based on the person who holds main executive power: the prime minister, president, or monarch.</p>
+
+  <div class="filters" id="filters" role="group" aria-label="Filter by group"></div>
+
+  <div class="controls">
+    <label>Sort by
+      <select id="sort">
+        <option value="oldest">Age today, oldest first</option>
+        <option value="youngest">Age today, youngest first</option>
+        <option value="tenure">Total time in office, longest first</option>
+        <option value="recent">Newest in office first</option>
+        <option value="alpha">Country, A to Z</option>
+      </select>
+    </label>
+    <label>Find
+      <input id="q" type="search" placeholder="Country or leader" autocomplete="off">
+    </label>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="legend">
+    <span><i class="sw"></i> Time in office</span>
+    <span><i class="sw edge"></i> Age today</span>
+  </div>
+
+  <div id="chart" role="img" aria-label="Chart of world leaders' ages and time in office"></div>
+
+  <p class="embed-foot" id="embedfoot"></p>
+
+  <details class="notes">
+    <summary>Notes, sources and caveats</summary>
+    <p id="asof"></p>
+    <h2>Who counts as the leader</h2>
+    <p>The person who holds the main executive power: the prime minister in most parliamentary systems, the president in presidential and semi-presidential ones, and the monarch in Gulf and other executive monarchies. For Saudi Arabia that is Crown Prince Mohammed bin Salman (prime minister since 2022); King Salman, born 1935, remains head of state. Xi and Tô Lâm are counted from taking the top party post. Many ceremonial presidents and kings are not shown.</p>
+    <h2>Terms</h2>
+    <p>Putin's 2008–2012 spell as prime minister appears as a gap. Erdoğan is one bar from 2003 (prime minister, then president from 2014), and Togo's Faure Gnassingbé likewise runs from 2005. Where a leader went straight from one office to another, the bar is continuous.</p>
+    <h2>Accuracy</h2>
+    <p>Every birth date was checked against two independent sources (English Wikipedia and Wikidata), and every term start and end date against Wikipedia. That check corrected a number of dates from my first draft. Where the two sources disagreed I looked further.</p>
+    <p>Two leaders have an official birth date that differs from other published ones, and I used the official one: Lee Jae-myung (22 December 1964, although other sources say about 8 December 1963) and Tarique Rahman (1968 on his national ID card; other sources say 1965 or 1967). For Mauritania's Ghazouani, Wikipedia and Wikidata differ by 27 days (4 or 31 December 1956) and I used the 4th. For acting or interim leaders (Tokayev, Japarov, Mirziyoyev, Delcy Rodríguez) the clock starts the day they took power.</p>
+    <p>Sweden's Kristersson is a caretaker following the September 2026 election, and Brazil's Lula stays until January 2027.</p>
+    <h2>Not included</h2>
+    <p>Countries are left out where I could not establish the leader's birth date reliably. Credible sources disagree on the birth year of North Korea's Kim Jong Un, Oman's Sultan Haitham and Guinea's Mamady Doumbouya. I also left out Afghanistan, Benin, Botswana, Bulgaria, Burundi, Cape Verde, Colombia, Georgia, Grenada, Guinea-Bissau, Haiti, Iraq, Latvia, Lesotho, Libya, Lithuania, Madagascar, Mali, Mongolia, Niger, North Macedonia, Serbia, Seychelles, Suriname, Switzerland, Uruguay, Yemen, and most Pacific and Caribbean microstates.</p>
+  </details>
+</main>
+
+<script>
+  // Edit or add rows here. Dates are YYYY-MM-DD. A term with no end date is the current one.
+  // g: member of the G20.
+  const L = (country, name, born, region, terms, opt = {}) => ({ country, name, born, region, terms, ...opt });
+
+  const LEADERS = [
+    // ---------- G20 ----------
+    L("United States","Donald Trump","1946-06-14","North America",[["2017-01-20","2021-01-20"],["2025-01-20"]],{g:1}),
+    L("Russia","Vladimir Putin","1952-10-07","Europe",[["1999-12-31","2008-05-07"],["2012-05-07"]],{g:1}),
+    L("China","Xi Jinping","1953-06-15","Asia",[["2012-11-15"]],{g:1}),
+    L("India","Narendra Modi","1950-09-17","Asia",[["2014-05-26"]],{g:1}),
+    L("Turkey","Recep Tayyip Erdoğan","1954-02-26","Asia",[["2003-03-14"]],{g:1}),
+    L("Brazil","Lula da Silva","1945-10-27","South America",[["2003-01-01","2011-01-01"],["2023-01-01"]],{g:1}),
+    L("Indonesia","Prabowo Subianto","1951-10-17","Asia",[["2024-10-20"]],{g:1}),
+    L("Germany","Friedrich Merz","1955-11-11","Europe",[["2025-05-06"]],{g:1}),
+    L("South Africa","Cyril Ramaphosa","1952-11-17","Africa",[["2018-02-15"]],{g:1}),
+    L("Australia","Anthony Albanese","1963-03-02","Oceania",[["2022-05-23"]],{g:1}),
+    L("South Korea","Lee Jae-myung","1964-12-22","Asia",[["2025-06-04"]],{g:1}),
+    L("Mexico","Claudia Sheinbaum","1962-06-24","North America",[["2024-10-01"]],{g:1}),
+    L("Japan","Sanae Takaichi","1961-03-07","Asia",[["2025-10-21"]],{g:1}),
+    L("Canada","Mark Carney","1965-03-16","North America",[["2025-03-14"]],{g:1}),
+    L("Argentina","Javier Milei","1970-10-22","South America",[["2023-12-10"]],{g:1}),
+    L("United Kingdom","Andy Burnham","1970-01-07","Europe",[["2026-07-20"]],{g:1}),
+    L("France","Emmanuel Macron","1977-12-21","Europe",[["2017-05-14"]],{g:1}),
+    L("Italy","Giorgia Meloni","1977-01-15","Europe",[["2022-10-22"]],{g:1}),
+    L("Saudi Arabia","Mohammed bin Salman","1985-08-31","Asia",[["2022-09-27"]],{g:1}),
+
+    // ---------- Europe ----------
+    L("Albania","Edi Rama","1964-07-04","Europe",[["2013-09-11"]]),
+    L("Austria","Christian Stocker","1960-03-20","Europe",[["2025-03-03"]]),
+    L("Belarus","Alexander Lukashenko","1954-08-30","Europe",[["1994-07-20"]]),
+    L("Belgium","Bart De Wever","1970-12-21","Europe",[["2025-02-03"]]),
+    L("Croatia","Andrej Plenković","1970-04-08","Europe",[["2016-10-19"]]),
+    L("Cyprus","Nikos Christodoulides","1973-12-06","Europe",[["2023-02-28"]]),
+    L("Czechia","Andrej Babiš","1954-09-02","Europe",[["2017-12-06","2021-11-28"],["2025-12-09"]]),
+    L("Denmark","Mette Frederiksen","1977-11-19","Europe",[["2019-06-27"]]),
+    L("Estonia","Kristen Michal","1975-07-12","Europe",[["2024-07-23"]]),
+    L("Finland","Petteri Orpo","1969-11-03","Europe",[["2023-06-20"]]),
+    L("Greece","Kyriakos Mitsotakis","1968-03-04","Europe",[["2019-07-08"]]),
+    L("Hungary","Péter Magyar","1981-03-16","Europe",[["2026-05-09"]]),
+    L("Iceland","Kristrún Frostadóttir","1988-05-12","Europe",[["2024-12-21"]]),
+    L("Ireland","Micheál Martin","1960-08-16","Europe",[["2020-06-27","2022-12-17"],["2025-01-23"]]),
+    L("Luxembourg","Luc Frieden","1963-09-16","Europe",[["2023-11-17"]]),
+    L("Malta","Robert Abela","1977-12-07","Europe",[["2020-01-13"]]),
+    L("Moldova","Maia Sandu","1972-05-24","Europe",[["2020-12-24"]]),
+    L("Montenegro","Milojko Spajić","1987-09-24","Europe",[["2023-10-31"]]),
+    L("Netherlands","Rob Jetten","1987-03-25","Europe",[["2026-02-23"]]),
+    L("Norway","Jonas Gahr Støre","1960-08-25","Europe",[["2021-10-14"]]),
+    L("Poland","Donald Tusk","1957-04-22","Europe",[["2007-11-16","2014-09-22"],["2023-12-13"]]),
+    L("Portugal","Luís Montenegro","1973-02-16","Europe",[["2024-04-02"]]),
+    L("Romania","Nicușor Dan","1969-12-20","Europe",[["2025-05-26"]]),
+    L("Slovakia","Robert Fico","1964-09-15","Europe",[["2006-07-04","2010-07-08"],["2012-04-04","2018-03-22"],["2023-10-25"]]),
+    L("Slovenia","Janez Janša","1958-09-17","Europe",[["2004-12-03","2008-11-21"],["2012-02-10","2013-03-20"],["2020-03-13","2022-06-01"],["2026-06-04"]]),
+    L("Spain","Pedro Sánchez","1972-02-29","Europe",[["2018-06-02"]]),
+    L("Sweden","Ulf Kristersson","1963-12-29","Europe",[["2022-10-18"]]),
+    L("Ukraine","Volodymyr Zelenskyy","1978-01-25","Europe",[["2019-05-20"]]),
+
+    // ---------- Asia ----------
+    L("Armenia","Nikol Pashinyan","1975-06-01","Asia",[["2018-05-08"]]),
+    L("Azerbaijan","Ilham Aliyev","1961-12-24","Asia",[["2003-10-31"]]),
+    L("Bahrain","King Hamad bin Isa Al Khalifa","1950-01-28","Asia",[["1999-03-06"]]),
+    L("Bangladesh","Tarique Rahman","1968-11-20","Asia",[["2026-02-17"]]),
+    L("Bhutan","Tshering Tobgay","1965-09-19","Asia",[["2013-07-27","2018-08-09"],["2024-01-28"]]),
+    L("Brunei","Sultan Hassanal Bolkiah","1946-07-15","Asia",[["1967-10-05"]]),
+    L("Cambodia","Hun Manet","1977-10-20","Asia",[["2023-08-22"]]),
+    L("Iran","Mojtaba Khamenei","1969-09-08","Asia",[["2026-03-08"]]),
+    L("Israel","Benjamin Netanyahu","1949-10-21","Asia",[["1996-06-18","1999-07-06"],["2009-03-31","2021-06-13"],["2022-12-29"]]),
+    L("Jordan","King Abdullah II","1962-01-30","Asia",[["1999-02-07"]]),
+    L("Kazakhstan","Kassym-Jomart Tokayev","1953-05-17","Asia",[["2019-03-20"]]),
+    L("Kuwait","Emir Mishal Al-Ahmad","1940-09-27","Asia",[["2023-12-16"]]),
+    L("Kyrgyzstan","Sadyr Japarov","1968-12-06","Asia",[["2020-10-15"]]),
+    L("Laos","Thongloun Sisoulith","1945-11-10","Asia",[["2016-04-20"]]),
+    L("Lebanon","Joseph Aoun","1964-01-10","Asia",[["2025-01-09"]]),
+    L("Malaysia","Anwar Ibrahim","1947-08-10","Asia",[["2022-11-24"]]),
+    L("Maldives","Mohamed Muizzu","1978-06-15","Asia",[["2023-11-17"]]),
+    L("Myanmar","Min Aung Hlaing","1956-07-03","Asia",[["2021-02-01"]]),
+    L("Nepal","Balendra Shah","1990-04-27","Asia",[["2026-03-27"]]),
+    L("Pakistan","Shehbaz Sharif","1951-09-23","Asia",[["2022-04-11","2023-08-14"],["2024-03-04"]]),
+    L("Palestine","Mahmoud Abbas","1935-11-15","Asia",[["2005-01-15"]]),
+    L("Philippines","Bongbong Marcos","1957-09-13","Asia",[["2022-06-30"]]),
+    L("Qatar","Emir Tamim bin Hamad","1980-06-03","Asia",[["2013-06-25"]]),
+    L("Singapore","Lawrence Wong","1972-12-18","Asia",[["2024-05-15"]]),
+    L("Sri Lanka","Anura Kumara Dissanayake","1968-11-24","Asia",[["2024-09-23"]]),
+    L("Syria","Ahmed al-Sharaa","1982-10-29","Asia",[["2024-12-08"]]),
+    L("Tajikistan","Emomali Rahmon","1952-10-05","Asia",[["1992-11-20"]]),
+    L("Thailand","Anutin Charnvirakul","1966-09-13","Asia",[["2025-09-07"]]),
+    L("Timor-Leste","Xanana Gusmão","1946-06-20","Asia",[["2002-05-20","2007-05-20"],["2007-08-08","2015-02-16"],["2023-07-01"]]),
+    L("Turkmenistan","Serdar Berdimuhamedow","1981-09-22","Asia",[["2022-03-19"]]),
+    L("United Arab Emirates","Mohamed bin Zayed","1961-03-11","Asia",[["2022-05-14"]]),
+    L("Uzbekistan","Shavkat Mirziyoyev","1957-07-24","Asia",[["2016-09-08"]]),
+    L("Vietnam","Tô Lâm","1957-07-10","Asia",[["2024-08-03"]]),
+
+    // ---------- Africa ----------
+    L("Algeria","Abdelmadjid Tebboune","1945-11-17","Africa",[["2019-12-19"]]),
+    L("Angola","João Lourenço","1954-03-05","Africa",[["2017-09-26"]]),
+    L("Burkina Faso","Ibrahim Traoré","1988-03-14","Africa",[["2022-09-30"]]),
+    L("Cameroon","Paul Biya","1933-02-13","Africa",[["1982-11-06"]]),
+    L("Central African Republic","Faustin-Archange Touadéra","1957-04-21","Africa",[["2016-03-30"]]),
+    L("Chad","Mahamat Déby","1984-04-04","Africa",[["2021-04-20"]]),
+    L("Comoros","Azali Assoumani","1959-01-01","Africa",[["1999-04-30","2006-05-26"],["2016-05-26"]]),
+    L("Côte d'Ivoire","Alassane Ouattara","1942-01-01","Africa",[["2010-12-04"]]),
+    L("DR Congo","Félix Tshisekedi","1963-06-13","Africa",[["2019-01-24"]]),
+    L("Djibouti","Ismaïl Omar Guelleh","1947-11-27","Africa",[["1999-05-08"]]),
+    L("Egypt","Abdel Fattah el-Sisi","1954-11-19","Africa",[["2014-06-08"]]),
+    L("Equatorial Guinea","Teodoro Obiang Nguema","1942-06-05","Africa",[["1979-08-03"]]),
+    L("Eritrea","Isaias Afwerki","1946-02-02","Africa",[["1993-05-24"]]),
+    L("Eswatini","King Mswati III","1968-04-19","Africa",[["1986-04-25"]]),
+    L("Ethiopia","Abiy Ahmed","1976-08-15","Africa",[["2018-04-02"]]),
+    L("Gabon","Brice Oligui Nguema","1975-03-03","Africa",[["2023-08-30"]]),
+    L("Gambia","Adama Barrow","1965-02-15","Africa",[["2017-01-19"]]),
+    L("Ghana","John Mahama","1958-11-29","Africa",[["2012-07-24","2017-01-07"],["2025-01-07"]]),
+    L("Kenya","William Ruto","1966-12-21","Africa",[["2022-09-13"]]),
+    L("Liberia","Joseph Boakai","1944-11-30","Africa",[["2024-01-22"]]),
+    L("Malawi","Peter Mutharika","1940-07-18","Africa",[["2014-05-31","2020-06-28"],["2025-10-04"]]),
+    L("Mauritania","Mohamed Ould Ghazouani","1956-12-04","Africa",[["2019-08-01"]]),
+    L("Mauritius","Navin Ramgoolam","1947-07-14","Africa",[["1995-12-27","2000-09-16"],["2005-07-05","2014-12-13"],["2024-11-12"]]),
+    L("Morocco","King Mohammed VI","1963-08-21","Africa",[["1999-07-23"]]),
+    L("Mozambique","Daniel Chapo","1977-01-06","Africa",[["2025-01-15"]]),
+    L("Namibia","Netumbo Nandi-Ndaitwah","1952-10-29","Africa",[["2025-03-21"]]),
+    L("Nigeria","Bola Tinubu","1952-03-29","Africa",[["2023-05-29"]]),
+    L("Republic of the Congo","Denis Sassou Nguesso","1943-11-23","Africa",[["1979-02-08","1992-08-31"],["1997-10-25"]]),
+    L("Rwanda","Paul Kagame","1957-10-23","Africa",[["2000-04-22"]]),
+    L("Senegal","Bassirou Diomaye Faye","1980-03-25","Africa",[["2024-04-02"]]),
+    L("Sierra Leone","Julius Maada Bio","1964-05-12","Africa",[["2018-04-04"]]),
+    L("Somalia","Hassan Sheikh Mohamud","1955-11-29","Africa",[["2012-09-16","2017-02-16"],["2022-05-23"]]),
+    L("South Sudan","Salva Kiir","1951-09-13","Africa",[["2011-07-09"]]),
+    L("Sudan","Abdel Fattah al-Burhan","1960-07-11","Africa",[["2019-04-12"]]),
+    L("Tanzania","Samia Suluhu Hassan","1960-01-27","Africa",[["2021-03-19"]]),
+    L("Togo","Faure Gnassingbé","1966-06-06","Africa",[["2005-05-04"]]),
+    L("Tunisia","Kais Saied","1958-02-22","Africa",[["2019-10-23"]]),
+    L("Uganda","Yoweri Museveni","1944-09-15","Africa",[["1986-01-29"]]),
+    L("Zambia","Hakainde Hichilema","1962-06-04","Africa",[["2021-08-24"]]),
+    L("Zimbabwe","Emmerson Mnangagwa","1942-09-15","Africa",[["2017-11-24"]]),
+
+    // ---------- North America (incl. Central America and Caribbean) ----------
+    L("Bahamas","Philip Davis","1951-06-07","North America",[["2021-09-17"]]),
+    L("Barbados","Mia Mottley","1965-10-01","North America",[["2018-05-25"]]),
+    L("Costa Rica","Laura Fernández","1986-07-04","North America",[["2026-05-08"]]),
+    L("Cuba","Miguel Díaz-Canel","1960-04-20","North America",[["2018-04-19"]]),
+    L("Dominica","Roosevelt Skerrit","1972-06-08","North America",[["2004-01-08"]]),
+    L("Dominican Republic","Luis Abinader","1967-07-12","North America",[["2020-08-16"]]),
+    L("El Salvador","Nayib Bukele","1981-07-24","North America",[["2019-06-01"]]),
+    L("Guatemala","Bernardo Arévalo","1958-10-07","North America",[["2024-01-14"]]),
+    L("Honduras","Nasry Asfura","1958-06-08","North America",[["2026-01-27"]]),
+    L("Jamaica","Andrew Holness","1972-07-22","North America",[["2011-10-23","2012-01-05"],["2016-03-03"]]),
+    L("Nicaragua","Daniel Ortega","1945-11-11","North America",[["1979-07-18","1990-04-25"],["2007-01-10"]]),
+    L("Panama","José Raúl Mulino","1959-06-13","North America",[["2024-07-01"]]),
+    L("Trinidad and Tobago","Kamla Persad-Bissessar","1952-04-22","North America",[["2010-05-26","2015-09-09"],["2025-05-01"]]),
+
+    // ---------- South America ----------
+    L("Bolivia","Rodrigo Paz","1967-09-22","South America",[["2025-11-08"]]),
+    L("Chile","José Antonio Kast","1966-01-18","South America",[["2026-03-11"]]),
+    L("Ecuador","Daniel Noboa","1987-11-30","South America",[["2023-11-23"]]),
+    L("Guyana","Irfaan Ali","1980-04-25","South America",[["2020-08-02"]]),
+    L("Paraguay","Santiago Peña","1978-11-16","South America",[["2023-08-15"]]),
+    L("Peru","Keiko Fujimori","1975-05-25","South America",[["2026-07-28"]]),
+    L("Venezuela","Delcy Rodríguez (acting)","1969-05-18","South America",[["2026-01-05"]]),
+
+    // ---------- Oceania ----------
+    L("Fiji","Sitiveni Rabuka","1948-09-13","Oceania",[["1992-06-02","1999-05-19"],["2022-12-24"]]),
+    L("New Zealand","Christopher Luxon","1970-07-19","Oceania",[["2023-11-27"]]),
+    L("Papua New Guinea","James Marape","1971-04-24","Oceania",[["2019-05-30"]])
+  ];
+
+  const AXIS_MIN = 0, AXIS_MAX = 105;
+  const MS_YEAR = 365.2425 * 24 * 3600 * 1000;
+  const today = new Date();
+  const d = s => new Date(s + "T00:00:00Z");
+  const yrs = (a, b) => (b - a) / MS_YEAR;
+  const pct = age => ((age - AXIS_MIN) / (AXIS_MAX - AXIS_MIN)) * 100;
+  const fmt = n => n.toFixed(1);
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+
+  const data = LEADERS.map(l => {
+    const born = d(l.born);
+    const ageNow = yrs(born, today);
+    const terms = l.terms.map(([s, e]) => {
+      const a0 = yrs(born, d(s));
+      const a1 = e ? yrs(born, d(e)) : ageNow;
+      return { a0, a1, s, e: e || null };
+    });
+    const tenure = terms.reduce((sum, t) => sum + (t.a1 - t.a0), 0);
+    const latestStart = d(terms[terms.length - 1].s).getTime();
+    return { ...l, ageNow, terms, tenure, latestStart };
+  });
+
+  const GROUPS = [
+    ["g20", "G20"], ["all", "All"], ["Africa", "Africa"], ["Asia", "Asia"],
+    ["Europe", "Europe"], ["North America", "North America"],
+    ["South America", "South America"], ["Oceania", "Oceania"]
+  ];
+  const state = { group: "g20", sort: "oldest", q: "" };
+
+  // ---- URL options, for embedding ----
+  //   ?view=g20|all|africa|asia|europe|north-america|south-america|oceania
+  //   &sort=oldest|youngest|tenure|recent|alpha   &q=search text
+  //   &embed=1 (hide subtitle and notes)  &title=1 (keep the title in embed mode)
+  //   &controls=0 (hide filters, sort and search)  &compact=1 (one line per country)  &theme=light|dark
+  const params = new URLSearchParams(location.search);
+  const VIEWS = { g20: "g20", all: "all", world: "all", africa: "Africa", asia: "Asia", europe: "Europe",
+    "north-america": "North America", "south-america": "South America", oceania: "Oceania" };
+  const viewParam = (params.get("view") || "").toLowerCase();
+  if (VIEWS[viewParam]) state.group = VIEWS[viewParam];
+  const sortParam = params.get("sort");
+  if (["oldest", "youngest", "tenure", "recent", "alpha"].includes(sortParam)) {
+    state.sort = sortParam; document.getElementById("sort").value = sortParam;
+  }
+  if (params.get("q")) { state.q = params.get("q"); document.getElementById("q").value = state.q; }
+  const rootEl = document.documentElement;
+  if (params.get("embed") === "1") rootEl.classList.add("embed");
+  if (params.get("title") === "1") rootEl.classList.add("show-title");
+  if (params.get("controls") === "0") rootEl.classList.add("no-controls");
+  if (params.get("compact") === "1") rootEl.classList.add("compact");
+  if (["light", "dark"].includes(params.get("theme"))) rootEl.setAttribute("data-theme", params.get("theme"));
+
+  const tenureText = t => {
+    const months = Math.max(1, Math.round(t * 12));
+    return months < 12 ? `${months} ${months === 1 ? "month" : "months"} in office` : `${fmt(t)} years in office`;
+  };
+  const longDate = s => d(s).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+
+  const ticks = [];
+  for (let a = AXIS_MIN; a <= 100; a += 10) ticks.push(a);
+  const gridHTML = [];
+  for (let a = AXIS_MIN; a <= 105; a += 5) gridHTML.push(`<div class="grid-line" style="left:${pct(a)}%"></div>`);
+  const GRID = gridHTML.join("");
+
+  const axisHTML = `
+    <div class="axis">
+      <div class="axis-label">Age (years)</div>
+      <div class="ticks">
+        ${ticks.map(a => `<div class="tick" style="left:${pct(a)}%">${a}</div>`).join("")}
+      </div>
+    </div>`;
+
+  function inGroup(l) {
+    if (state.group === "all") return true;
+    if (state.group === "g20") return !!l.g;
+    return l.region === state.group;
+  }
+
+  function render() {
+    const q = state.q.trim().toLowerCase();
+    let rows = data.filter(l => inGroup(l) &&
+      (!q || l.country.toLowerCase().includes(q) || l.name.toLowerCase().includes(q)));
+
+    const sorters = {
+      oldest:   (a, b) => b.ageNow - a.ageNow,
+      youngest: (a, b) => a.ageNow - b.ageNow,
+      tenure:   (a, b) => b.tenure - a.tenure,
+      recent:   (a, b) => b.latestStart - a.latestStart,
+      alpha:    (a, b) => a.country.localeCompare(b.country)
+    };
+    rows = rows.sort(sorters[state.sort]);
+
+    document.getElementById("count").textContent =
+      `${rows.length} ${rows.length === 1 ? "country" : "countries"}`;
+
+    const html = rows.map(l => {
+      const bars = l.terms.map(t => {
+        const left = pct(t.a0), width = pct(t.a1) - pct(t.a0);
+        const title = `${longDate(t.s)} to ${t.e ? longDate(t.e) : "today"} (age ${fmt(t.a0)} to ${fmt(t.a1)})`;
+        return `<div class="bar${t.e ? "" : " current"}" style="left:${left}%; width:${width}%" title="${title}"></div>`;
+      }).join("");
+      const first = l.terms[0];
+      const termsText = l.terms.length > 1 ? `${l.terms.length} terms · ` : "";
+      return `
+        <div class="row">
+          <div class="who" title="${esc(l.name)} · ${termsText}${tenureText(l.tenure)}">
+            <div class="country">${esc(l.country)}</div>
+            <div class="detail">${esc(l.name)}<br>${termsText}${tenureText(l.tenure)}</div>
+          </div>
+          <div class="track">
+            ${GRID}
+            ${bars}
+            <div class="lbl start" style="left:${pct(first.a0)}%">${fmt(first.a0)}</div>
+            <div class="lbl now" style="left:${pct(l.ageNow)}%">${fmt(l.ageNow)}</div>
+          </div>
+        </div>`;
+    }).join("");
+
+    document.getElementById("chart").innerHTML =
+      axisHTML + (rows.length ? html : `<div class="empty">No countries match.</div>`);
+  }
+
+  // Filter chips
+  const filtersEl = document.getElementById("filters");
+  const TITLE_WHO = { all: "the world's", g20: "the G20's" };
+  function renderTitle() {
+    const who = TITLE_WHO[state.group] || (state.group + "'s");
+    const t = `How old are ${who} leaders, and how long have they led?`;
+    document.getElementById("title").textContent = t;
+    document.title = t;
+  }
+  function renderChips() {
+    filtersEl.innerHTML = GROUPS.map(([key, label]) =>
+      `<button type="button" class="chip" data-key="${key}" aria-pressed="${state.group === key}">${label}</button>`
+    ).join("");
+  }
+  filtersEl.addEventListener("click", e => {
+    const b = e.target.closest(".chip");
+    if (!b) return;
+    state.group = b.dataset.key;
+    renderChips(); renderTitle(); render();
+  });
+
+  document.getElementById("sort").addEventListener("change", e => { state.sort = e.target.value; render(); });
+  document.getElementById("q").addEventListener("input", e => { state.q = e.target.value; render(); });
+
+  renderChips();
+  renderTitle();
+  render();
+
+  document.getElementById("asof").textContent =
+    "Ages and tenures calculated as of " +
+    today.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) +
+    ". " + data.length + " countries in total.";
+  document.getElementById("embedfoot").textContent =
+    "Ages as of " + today.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) +
+    ". Leader = the person who holds main executive power.";
+</script>
+</body>
+</html>

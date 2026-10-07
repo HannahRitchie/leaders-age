@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Leader age, by region</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --bg: #fbfbf9;
+    --ink: #1c2330;
+    --muted: #6b7380;
+    --grid: #e3e5e8;
+    --track: #eef0f2;
+    --bar: #b4232a;
+    --dot: #d9534f;
+    --chip-on-bg: #1c2330;
+    --chip-on-ink: #fbfbf9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181f; --ink: #e8eaee; --muted: #8f97a4; --grid: #2a303a; --track: #1c222b;
+      --bar: #e5575c; --dot: #e5575c; --chip-on-bg: #e8eaee; --chip-on-ink: #14181f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181f; --ink: #e8eaee; --muted: #8f97a4; --grid: #2a303a; --track: #1c222b;
+    --bar: #e5575c; --dot: #e5575c; --chip-on-bg: #e8eaee; --chip-on-ink: #14181f;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: inherit; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.45;
+  }
+  main { max-width: 1000px; margin: 0 auto; padding: 32px 20px 48px; }
+  h1 {
+    font-weight: 700; font-size: clamp(1.5rem, 3.6vw, 2.1rem);
+    line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.022em;
+  }
+  .lede { color: var(--muted); margin: 0 0 18px; max-width: none; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; margin-bottom: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font: inherit; font-size: 0.9375rem; color: var(--ink); background: var(--track);
+    border: 1px solid var(--grid); border-radius: 999px; padding: 5px 14px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--chip-on-bg); color: var(--chip-on-ink); border-color: var(--chip-on-bg); }
+  .chip:focus-visible, select:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .controls label { font-size: 0.9375rem; color: var(--muted); margin-left: auto; }
+  .controls select {
+    font: inherit; color: var(--ink); background: var(--track);
+    border: 1px solid var(--grid); border-radius: 4px; padding: 5px 8px; margin-left: 6px; max-width: 220px;
+  }
+
+  .plot { position: relative; width: 100%; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg text { font-family: inherit; fill: var(--muted); font-size: 12.5px; }
+  svg .gtitle { fill: var(--ink); font-size: 15px; font-weight: 700; }
+  svg .lab1 { fill: var(--ink); font-size: 12.5px; font-weight: 600; paint-order: stroke; stroke: var(--bg); stroke-width: 3.5px; stroke-linejoin: round; }
+  svg .lab2 { fill: var(--muted); font-size: 12px; paint-order: stroke; stroke: var(--bg); stroke-width: 3.5px; stroke-linejoin: round; }
+  .pt { fill: var(--dot); stroke: var(--bg); stroke-width: 1; cursor: pointer; }
+  .pt:hover { stroke: var(--ink); stroke-width: 2; }
+  .pt.hl { stroke: var(--ink); stroke-width: 2.2; }
+
+  .tip {
+    position: fixed; pointer-events: none; z-index: 10; display: none;
+    background: var(--bg); color: var(--ink); border: 1px solid var(--ink);
+    border-radius: 4px; padding: 7px 10px; font-size: 0.8125rem; line-height: 1.35;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15); max-width: 250px;
+  }
+  .tip b { display: block; font-size: 0.9375rem; }
+
+  .foot { color: var(--muted); font-size: 0.75rem; margin: 12px 0 0; }
+
+  details.notes { margin-top: 24px; border-top: 1px solid var(--grid); padding-top: 12px; color: var(--muted); font-size: 0.875rem; }
+  details.notes > summary {
+    cursor: pointer; color: var(--ink); font-weight: 600; font-size: 0.9375rem;
+    list-style: none; display: inline-flex; align-items: center; gap: 8px; padding: 4px 0;
+  }
+  details.notes > summary::-webkit-details-marker { display: none; }
+  details.notes > summary::before {
+    content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg); transition: transform 0.15s; margin-right: 2px;
+  }
+  details.notes[open] > summary::before { transform: rotate(45deg); }
+  details.notes > summary:focus-visible { outline: 2px solid var(--bar); outline-offset: 3px; }
+  details.notes > :not(summary) { max-width: 76ch; }
+  details.notes h2 { font-size: 1rem; color: var(--ink); margin: 16px 0 6px; }
+  details.notes p { margin: 0 0 8px; }
+
+  /* Embed mode (set with URL options, see the script) */
+  html.embed .lede, html.embed details.notes { display: none; }
+  html.embed:not(.show-title) h1 { display: none; }
+  html.embed main { padding: 14px 16px; }
+  html.no-controls .controls { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">Leader age, by region</h1>
+  <p class="lede" id="lede"></p>
+
+  <div class="controls">
+    <div class="chips" id="chips" role="group" aria-label="Group countries by"></div>
+    <label>Highlight a country
+      <select id="pick"><option value="">None</option></select>
+    </label>
+  </div>
+
+  <div class="plot" id="plot">
+    <svg id="svg" role="img" aria-label="Dot plot with one dot per country, placed at the age of its leader"></svg>
+    <div class="tip" id="tip"></div>
+  </div>
+
+  <p class="foot" id="foot"></p>
+
+  <details class="notes">
+    <summary>Notes, sources and caveats</summary>
+    <h2>How to read it</h2>
+    <p>Each dot is one country, placed along the axis at the age of its current leader. Dots that would overlap are nudged up or down. The oldest and youngest leader in each group are labelled; pick any other country from the menu to highlight it, or hover or tap a dot.</p>
+    <h2>Who counts as the leader</h2>
+    <p>The person who holds the main executive power: the prime minister in most parliamentary systems, the president in presidential and semi-presidential ones, and the monarch in Gulf and other executive monarchies. For Saudi Arabia that is Crown Prince Mohammed bin Salman; King Salman, born 1935, remains head of state.</p>
+    <h2>Regions</h2>
+    <p>Russia is counted in Europe and Turkey in Asia. North America includes Central America and the Caribbean.</p>
+    <h2>Political regimes</h2>
+    <p>Regimes use the Regimes of the World classification (Lührmann, Tannenberg and Lindberg, 2018), as scored by V-Dem for 2025 (Democracy Report v16, March 2026), via Our World in Data. In a <i>liberal democracy</i>, there are free and fair multiparty elections plus individual and minority rights, and the courts and legislature constrain the executive. An <i>electoral democracy</i> has free and fair multiparty elections without those further protections. An <i>electoral autocracy</i> holds multiparty elections that are not free and fair. In a <i>closed autocracy</i>, citizens cannot choose the chief executive or the legislature through multiparty elections.</p>
+    <p>The classification describes 2025, while the leaders are those in office today. Where the government changed in 2026 (for example Hungary, Bangladesh, Nepal and Venezuela), the regime label reflects the previous government's year. Brunei, the Bahamas and Dominica are not classified by V-Dem and are left out of the regime view. Palestine uses V-Dem's score for the West Bank.</p>
+    <h2>Accuracy and coverage</h2>
+    <p>Every birth date was checked against two independent sources (English Wikipedia and Wikidata). The dataset covers 143 countries. Countries are left out where the leader's birth date could not be established reliably (including North Korea, Oman and Guinea), and those with no clear national leader. Two leaders use an official birth date that differs from other published ones: Lee Jae-myung and Tarique Rahman.</p>
+  </details>
+</main>
+
+<script>
+  // c: country, n: leader, b: birth date, r: region, g: G20 member, v: V-Dem regime (3 liberal democracy ... 0 closed autocracy; null = not classified)
+  const DATA = [{"c":"United States","n":"Donald Trump","b":"1946-06-14","r":"North America","g":1,"m":38.71,"v":2},{"c":"Russia","n":"Vladimir Putin","b":"1952-10-07","r":"Europe","g":1,"m":40.7,"v":1},{"c":"China","n":"Xi Jinping","b":"1953-06-15","r":"Asia","g":1,"m":40.65,"v":0},{"c":"India","n":"Narendra Modi","b":"1950-09-17","r":"Asia","g":1,"m":29.22,"v":1},{"c":"Turkey","n":"Recep Tayyip Erdoğan","b":"1954-02-26","r":"Asia","g":1,"m":33.94,"v":1},{"c":"Brazil","n":"Lula da Silva","b":"1945-10-27","r":"South America","g":1,"m":35.25,"v":2},{"c":"Indonesia","n":"Prabowo Subianto","b":"1951-10-17","r":"Asia","g":1,"m":30.66,"v":1},{"c":"Germany","n":"Friedrich Merz","b":"1955-11-11","r":"Europe","g":1,"m":45.69,"v":3},{"c":"South Africa","n":"Cyril Ramaphosa","b":"1952-11-17","r":"Africa","g":1,"m":28.91,"v":2},{"c":"Australia","n":"Anthony Albanese","b":"1963-03-02","r":"Oceania","g":1,"m":38.52,"v":3},{"c":"South Korea","n":"Lee Jae-myung","b":"1964-12-22","r":"Asia","g":1,"m":46.19,"v":3},{"c":"Mexico","n":"Claudia Sheinbaum","b":"1962-06-24","r":"North America","g":1,"m":30,"v":1},{"c":"Japan","n":"Sanae Takaichi","b":"1961-03-07","r":"Asia","g":1,"m":50.18,"v":3},{"c":"Canada","n":"Mark Carney","b":"1965-03-16","r":"North America","g":1,"m":40.84,"v":2},{"c":"Argentina","n":"Javier Milei","b":"1970-10-22","r":"South America","g":1,"m":33.32,"v":2},{"c":"United Kingdom","n":"Andy Burnham","b":"1970-01-07","r":"Europe","g":1,"m":40.21,"v":2},{"c":"France","n":"Emmanuel Macron","b":"1977-12-21","r":"Europe","g":1,"m":42.46,"v":3},{"c":"Italy","n":"Giorgia Meloni","b":"1977-01-15","r":"Europe","g":1,"m":48.61,"v":3},{"c":"Saudi Arabia","n":"Mohammed bin Salman","b":"1985-08-31","r":"Asia","g":1,"m":29.67,"v":0},{"c":"Albania","n":"Edi Rama","b":"1964-07-04","r":"Europe","g":0,"m":37.82,"v":1},{"c":"Austria","n":"Christian Stocker","b":"1960-03-20","r":"Europe","g":0,"m":43.94,"v":3},{"c":"Belarus","n":"Alexander Lukashenko","b":"1954-08-30","r":"Europe","g":0,"m":41.77,"v":0},{"c":"Belgium","n":"Bart De Wever","b":"1970-12-21","r":"Europe","g":0,"m":42.14,"v":3},{"c":"Croatia","n":"Andrej Plenković","b":"1970-04-08","r":"Europe","g":0,"m":45.54,"v":2},{"c":"Cyprus","n":"Nikos Christodoulides","b":"1973-12-06","r":"Europe","g":0,"m":39.08,"v":3},{"c":"Czechia","n":"Andrej Babiš","b":"1954-09-02","r":"Europe","g":0,"m":44.26,"v":3},{"c":"Denmark","n":"Mette Frederiksen","b":"1977-11-19","r":"Europe","g":0,"m":41.32,"v":3},{"c":"Estonia","n":"Kristen Michal","b":"1975-07-12","r":"Europe","g":0,"m":43.22,"v":3},{"c":"Finland","n":"Petteri Orpo","b":"1969-11-03","r":"Europe","g":0,"m":43.37,"v":3},{"c":"Greece","n":"Kyriakos Mitsotakis","b":"1968-03-04","r":"Europe","g":0,"m":47.1,"v":2},{"c":"Hungary","n":"Péter Magyar","b":"1981-03-16","r":"Europe","g":0,"m":44.15,"v":1},{"c":"Iceland","n":"Kristrún Frostadóttir","b":"1988-05-12","r":"Europe","g":0,"m":36.55,"v":3},{"c":"Ireland","n":"Micheál Martin","b":"1960-08-16","r":"Europe","g":0,"m":39.19,"v":3},{"c":"Luxembourg","n":"Luc Frieden","b":"1963-09-16","r":"Europe","g":0,"m":39.75,"v":3},{"c":"Malta","n":"Robert Abela","b":"1977-12-07","r":"Europe","g":0,"m":41.46,"v":2},{"c":"Moldova","n":"Maia Sandu","b":"1972-05-24","r":"Europe","g":0,"m":39.09,"v":2},{"c":"Montenegro","n":"Milojko Spajić","b":"1987-09-24","r":"Europe","g":0,"m":40.43,"v":2},{"c":"Netherlands","n":"Rob Jetten","b":"1987-03-25","r":"Europe","g":0,"m":41.52,"v":3},{"c":"Norway","n":"Jonas Gahr Støre","b":"1960-08-25","r":"Europe","g":0,"m":40.1,"v":3},{"c":"Poland","n":"Donald Tusk","b":"1957-04-22","r":"Europe","g":0,"m":43.04,"v":2},{"c":"Portugal","n":"Luís Montenegro","b":"1973-02-16","r":"Europe","g":0,"m":47.24,"v":2},{"c":"Romania","n":"Nicușor Dan","b":"1969-12-20","r":"Europe","g":0,"m":43.45,"v":2},{"c":"Slovakia","n":"Robert Fico","b":"1964-09-15","r":"Europe","g":0,"m":42.76,"v":2},{"c":"Slovenia","n":"Janez Janša","b":"1958-09-17","r":"Europe","g":0,"m":45.03,"v":2},{"c":"Spain","n":"Pedro Sánchez","b":"1972-02-29","r":"Europe","g":0,"m":46.3,"v":3},{"c":"Sweden","n":"Ulf Kristersson","b":"1963-12-29","r":"Europe","g":0,"m":40.45,"v":3},{"c":"Ukraine","n":"Volodymyr Zelenskyy","b":"1978-01-25","r":"Europe","g":0,"m":41.82,"v":1},{"c":"Armenia","n":"Nikol Pashinyan","b":"1975-06-01","r":"Asia","g":0,"m":37.2,"v":2},{"c":"Azerbaijan","n":"Ilham Aliyev","b":"1961-12-24","r":"Asia","g":0,"m":34.11,"v":1},{"c":"Bahrain","n":"King Hamad bin Isa Al Khalifa","b":"1950-01-28","r":"Asia","g":0,"m":33.44,"v":0},{"c":"Bangladesh","n":"Tarique Rahman","b":"1968-11-20","r":"Asia","g":0,"m":26.3,"v":0},{"c":"Bhutan","n":"Tshering Tobgay","b":"1965-09-19","r":"Asia","g":0,"m":30.99,"v":2},{"c":"Brunei","n":"Sultan Hassanal Bolkiah","b":"1946-07-15","r":"Asia","g":0,"m":33.18,"v":null},{"c":"Cambodia","n":"Hun Manet","b":"1977-10-20","r":"Asia","g":0,"m":26.37,"v":1},{"c":"Iran","n":"Mojtaba Khamenei","b":"1969-09-08","r":"Asia","g":0,"m":34.52,"v":1},{"c":"Israel","n":"Benjamin Netanyahu","b":"1949-10-21","r":"Asia","g":0,"m":29.26,"v":2},{"c":"Jordan","n":"King Abdullah II","b":"1962-01-30","r":"Asia","g":0,"m":24.9,"v":0},{"c":"Kazakhstan","n":"Kassym-Jomart Tokayev","b":"1953-05-17","r":"Asia","g":0,"m":29.74,"v":1},{"c":"Kuwait","n":"Emir Mishal Al-Ahmad","b":"1940-09-27","r":"Asia","g":0,"m":34.83,"v":0},{"c":"Kyrgyzstan","n":"Sadyr Japarov","b":"1968-12-06","r":"Asia","g":0,"m":25.49,"v":1},{"c":"Laos","n":"Thongloun Sisoulith","b":"1945-11-10","r":"Asia","g":0,"m":25.28,"v":0},{"c":"Lebanon","n":"Joseph Aoun","b":"1964-01-10","r":"Asia","g":0,"m":29.04,"v":1},{"c":"Malaysia","n":"Anwar Ibrahim","b":"1947-08-10","r":"Asia","g":0,"m":31.38,"v":2},{"c":"Maldives","n":"Mohamed Muizzu","b":"1978-06-15","r":"Asia","g":0,"m":33.43,"v":2},{"c":"Myanmar","n":"Min Aung Hlaing","b":"1956-07-03","r":"Asia","g":0,"m":30.41,"v":0},{"c":"Nepal","n":"Balendra Shah","b":"1990-04-27","r":"Asia","g":0,"m":25.7,"v":2},{"c":"Pakistan","n":"Shehbaz Sharif","b":"1951-09-23","r":"Asia","g":0,"m":20.77,"v":1},{"c":"Palestine","n":"Mahmoud Abbas","b":"1935-11-15","r":"Asia","g":0,"m":20.27,"v":1},{"c":"Philippines","n":"Bongbong Marcos","b":"1957-09-13","r":"Asia","g":0,"m":26.57,"v":1},{"c":"Qatar","n":"Emir Tamim bin Hamad","b":"1980-06-03","r":"Asia","g":0,"m":33.4,"v":0},{"c":"Singapore","n":"Lawrence Wong","b":"1972-12-18","r":"Asia","g":0,"m":36.77,"v":1},{"c":"Sri Lanka","n":"Anura Kumara Dissanayake","b":"1968-11-24","r":"Asia","g":0,"m":33.62,"v":2},{"c":"Syria","n":"Ahmed al-Sharaa","b":"1982-10-29","r":"Asia","g":0,"m":23.81,"v":0},{"c":"Tajikistan","n":"Emomali Rahmon","b":"1952-10-05","r":"Asia","g":0,"m":22.35,"v":1},{"c":"Thailand","n":"Anutin Charnvirakul","b":"1966-09-13","r":"Asia","g":0,"m":40.98,"v":1},{"c":"Timor-Leste","n":"Xanana Gusmão","b":"1946-06-20","r":"Asia","g":0,"m":22.09,"v":2},{"c":"Turkmenistan","n":"Serdar Berdimuhamedow","b":"1981-09-22","r":"Asia","g":0,"m":27.26,"v":1},{"c":"United Arab Emirates","n":"Mohamed bin Zayed","b":"1961-03-11","r":"Asia","g":0,"m":31.62,"v":0},{"c":"Uzbekistan","n":"Shavkat Mirziyoyev","b":"1957-07-24","r":"Asia","g":0,"m":27.03,"v":1},{"c":"Vietnam","n":"Tô Lâm","b":"1957-07-10","r":"Asia","g":0,"m":33.9,"v":0},{"c":"Algeria","n":"Abdelmadjid Tebboune","b":"1945-11-17","r":"Africa","g":0,"m":28.83,"v":1},{"c":"Angola","n":"João Lourenço","b":"1954-03-05","r":"Africa","g":0,"m":16.73,"v":1},{"c":"Burkina Faso","n":"Ibrahim Traoré","b":"1988-03-14","r":"Africa","g":0,"m":18.01,"v":0},{"c":"Cameroon","n":"Paul Biya","b":"1933-02-13","r":"Africa","g":0,"m":18.21,"v":1},{"c":"Central African Republic","n":"Faustin-Archange Touadéra","b":"1957-04-21","r":"Africa","g":0,"m":14.63,"v":1},{"c":"Chad","n":"Mahamat Déby","b":"1984-04-04","r":"Africa","g":0,"m":15.74,"v":1},{"c":"Comoros","n":"Azali Assoumani","b":"1959-01-01","r":"Africa","g":0,"m":20.73,"v":1},{"c":"Côte d'Ivoire","n":"Alassane Ouattara","b":"1942-01-01","r":"Africa","g":0,"m":18.5,"v":1},{"c":"DR Congo","n":"Félix Tshisekedi","b":"1963-06-13","r":"Africa","g":0,"m":15.86,"v":1},{"c":"Djibouti","n":"Ismaïl Omar Guelleh","b":"1947-11-27","r":"Africa","g":0,"m":25.16,"v":1},{"c":"Egypt","n":"Abdel Fattah el-Sisi","b":"1954-11-19","r":"Africa","g":0,"m":24.7,"v":1},{"c":"Equatorial Guinea","n":"Teodoro Obiang Nguema","b":"1942-06-05","r":"Africa","g":0,"m":20.87,"v":1},{"c":"Eritrea","n":"Isaias Afwerki","b":"1946-02-02","r":"Africa","g":0,"m":19.51,"v":0},{"c":"Eswatini","n":"King Mswati III","b":"1968-04-19","r":"Africa","g":0,"m":22.7,"v":0},{"c":"Ethiopia","n":"Abiy Ahmed","b":"1976-08-15","r":"Africa","g":0,"m":19.34,"v":1},{"c":"Gabon","n":"Brice Oligui Nguema","b":"1975-03-03","r":"Africa","g":0,"m":21.55,"v":1},{"c":"Gambia","n":"Adama Barrow","b":"1965-02-15","r":"Africa","g":0,"m":18.83,"v":2},{"c":"Ghana","n":"John Mahama","b":"1958-11-29","r":"Africa","g":0,"m":21.56,"v":2},{"c":"Kenya","n":"William Ruto","b":"1966-12-21","r":"Africa","g":0,"m":20.3,"v":2},{"c":"Liberia","n":"Joseph Boakai","b":"1944-11-30","r":"Africa","g":0,"m":18.99,"v":2},{"c":"Malawi","n":"Peter Mutharika","b":"1940-07-18","r":"Africa","g":0,"m":18.39,"v":2},{"c":"Mauritania","n":"Mohamed Ould Ghazouani","b":"1956-12-04","r":"Africa","g":0,"m":17.53,"v":1},{"c":"Mauritius","n":"Navin Ramgoolam","b":"1947-07-14","r":"Africa","g":0,"m":38.27,"v":2},{"c":"Morocco","n":"King Mohammed VI","b":"1963-08-21","r":"Africa","g":0,"m":30.14,"v":0},{"c":"Mozambique","n":"Daniel Chapo","b":"1977-01-06","r":"Africa","g":0,"m":16.62,"v":1},{"c":"Namibia","n":"Netumbo Nandi-Ndaitwah","b":"1952-10-29","r":"Africa","g":0,"m":21.5,"v":2},{"c":"Nigeria","n":"Bola Tinubu","b":"1952-03-29","r":"Africa","g":0,"m":18.35,"v":2},{"c":"Republic of the Congo","n":"Denis Sassou Nguesso","b":"1943-11-23","r":"Africa","g":0,"m":18.73,"v":1},{"c":"Rwanda","n":"Paul Kagame","b":"1957-10-23","r":"Africa","g":0,"m":20.22,"v":1},{"c":"Senegal","n":"Bassirou Diomaye Faye","b":"1980-03-25","r":"Africa","g":0,"m":19.84,"v":2},{"c":"Sierra Leone","n":"Julius Maada Bio","b":"1964-05-12","r":"Africa","g":0,"m":19.94,"v":1},{"c":"Somalia","n":"Hassan Sheikh Mohamud","b":"1955-11-29","r":"Africa","g":0,"m":15.63,"v":0},{"c":"South Sudan","n":"Salva Kiir","b":"1951-09-13","r":"Africa","g":0,"m":19.04,"v":0},{"c":"Sudan","n":"Abdel Fattah al-Burhan","b":"1960-07-11","r":"Africa","g":0,"m":18.78,"v":0},{"c":"Tanzania","n":"Samia Suluhu Hassan","b":"1960-01-27","r":"Africa","g":0,"m":17.62,"v":1},{"c":"Togo","n":"Faure Gnassingbé","b":"1966-06-06","r":"Africa","g":0,"m":19.2,"v":1},{"c":"Tunisia","n":"Kais Saied","b":"1958-02-22","r":"Africa","g":0,"m":33.36,"v":1},{"c":"Uganda","n":"Yoweri Museveni","b":"1944-09-15","r":"Africa","g":0,"m":17.11,"v":1},{"c":"Zambia","n":"Hakainde Hichilema","b":"1962-06-04","r":"Africa","g":0,"m":18.17,"v":1},{"c":"Zimbabwe","n":"Emmerson Mnangagwa","b":"1942-09-15","r":"Africa","g":0,"m":18.32,"v":1},{"c":"Bahamas","n":"Philip Davis","b":"1951-06-07","r":"North America","g":0,"m":35.65,"v":null},{"c":"Barbados","n":"Mia Mottley","b":"1965-10-01","r":"North America","g":0,"m":39.66,"v":3},{"c":"Costa Rica","n":"Laura Fernández","b":"1986-07-04","r":"North America","g":0,"m":35.69,"v":3},{"c":"Cuba","n":"Miguel Díaz-Canel","b":"1960-04-20","r":"North America","g":0,"m":42.48,"v":0},{"c":"Dominica","n":"Roosevelt Skerrit","b":"1972-06-08","r":"North America","g":0,"m":36.64,"v":null},{"c":"Dominican Republic","n":"Luis Abinader","b":"1967-07-12","r":"North America","g":0,"m":28.68,"v":2},{"c":"El Salvador","n":"Nayib Bukele","b":"1981-07-24","r":"North America","g":0,"m":28.37,"v":1},{"c":"Guatemala","n":"Bernardo Arévalo","b":"1958-10-07","r":"North America","g":0,"m":23.82,"v":2},{"c":"Honduras","n":"Nasry Asfura","b":"1958-06-08","r":"North America","g":0,"m":24.59,"v":2},{"c":"Jamaica","n":"Andrew Holness","b":"1972-07-22","r":"North America","g":0,"m":33.31,"v":2},{"c":"Nicaragua","n":"Daniel Ortega","b":"1945-11-11","r":"North America","g":0,"m":26.33,"v":1},{"c":"Panama","n":"José Raúl Mulino","b":"1959-06-13","r":"North America","g":0,"m":30.58,"v":2},{"c":"Trinidad and Tobago","n":"Kamla Persad-Bissessar","b":"1952-04-22","r":"North America","g":0,"m":38.21,"v":3},{"c":"Bolivia","n":"Rodrigo Paz","b":"1967-09-22","r":"South America","g":0,"m":25.5,"v":2},{"c":"Chile","n":"José Antonio Kast","b":"1966-01-18","r":"South America","g":0,"m":37.43,"v":3},{"c":"Ecuador","n":"Daniel Noboa","b":"1987-11-30","r":"South America","g":0,"m":29.72,"v":2},{"c":"Guyana","n":"Irfaan Ali","b":"1980-04-25","r":"South America","g":0,"m":26.54,"v":2},{"c":"Paraguay","n":"Santiago Peña","b":"1978-11-16","r":"South America","g":0,"m":27.27,"v":2},{"c":"Peru","n":"Keiko Fujimori","b":"1975-05-25","r":"South America","g":0,"m":30.55,"v":2},{"c":"Venezuela","n":"Delcy Rodríguez (acting)","b":"1969-05-18","r":"South America","g":0,"m":29.54,"v":1},{"c":"Fiji","n":"Sitiveni Rabuka","b":"1948-09-13","r":"Oceania","g":0,"m":28.28,"v":2},{"c":"New Zealand","n":"Christopher Luxon","b":"1970-07-19","r":"Oceania","g":0,"m":37.99,"v":3},{"c":"Papua New Guinea","n":"James Marape","b":"1971-04-24","r":"Oceania","g":0,"m":23.01,"v":1}];
+
+  const MS_YEAR = 365.2425 * 24 * 3600 * 1000;
+  const today = new Date();
+  const people = DATA.map(p => ({ ...p, age: (today - new Date(p.b + "T00:00:00Z")) / MS_YEAR }));
+  const byCountry = new Map(people.map(p => [p.c.toLowerCase(), p]));
+
+  const REGIONS = ["Africa", "Asia", "Europe", "North America", "South America", "Oceania"];
+  const REGIME = { 3: "Liberal democracy", 2: "Electoral democracy", 1: "Electoral autocracy", 0: "Closed autocracy" };
+  const state = { group: "region", highlight: [] };
+
+  // ---- URL options, for embedding ----
+  //   ?group=region|regime   &highlight=Brazil,China (comma separated country names)
+  //   &embed=1 (hide subtitle and notes)  &title=1 (keep the title in embed mode)
+  //   &controls=0 (hide the buttons and menu)  &theme=light|dark
+  const params = new URLSearchParams(location.search);
+  const rootEl = document.documentElement;
+  if (["region", "regime"].includes((params.get("group") || "").toLowerCase())) state.group = params.get("group").toLowerCase();
+  if (params.get("highlight")) {
+    state.highlight = params.get("highlight").split(",").map(s => byCountry.get(s.trim().toLowerCase())).filter(Boolean).map(p => p.c);
+  }
+  if (params.get("embed") === "1") rootEl.classList.add("embed");
+  if (params.get("title") === "1") rootEl.classList.add("show-title");
+  if (params.get("controls") === "0") rootEl.classList.add("no-controls");
+  if (["light", "dark"].includes(params.get("theme"))) rootEl.setAttribute("data-theme", params.get("theme"));
+
+  const AXIS_MIN = 30, AXIS_MAX = 100;
+  const fmt = n => n.toFixed(1);
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  const median = a => { const s = [...a].sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+
+  function makeGroups() {
+    if (state.group === "regime") {
+      return [3, 2, 1, 0].map(v => ({ label: REGIME[v], items: people.filter(p => p.v === v) }));
+    }
+    return REGIONS.map(r => ({ label: r, items: people.filter(p => p.r === r) }))
+      .sort((a, b) => median(b.items.map(p => p.age)) - median(a.items.map(p => p.age)));
+  }
+
+  // text width, measured with the page font
+  const ctx = document.createElement("canvas").getContext("2d");
+  const textW = (t, font) => { ctx.font = font; return ctx.measureText(t).width; };
+
+  const svg = document.getElementById("svg");
+  const plot = document.getElementById("plot");
+  const tip = document.getElementById("tip");
+
+  function draw() {
+    const W = Math.max(300, plot.clientWidth);
+    const padL = 16, padR = 16;
+    const r = W < 560 ? 4.4 : 5.4, d = 2 * r + 1.4;
+    const sx = a => padL + (a - AXIS_MIN) / (AXIS_MAX - AXIS_MIN) * (W - padL - padR);
+    const groups = makeGroups();
+    const labelFont1 = "600 12.5px Inter, system-ui, sans-serif", labelFont2 = "400 12px Inter, system-ui, sans-serif";
+    const hl = new Set(state.highlight);
+
+    // 1. beeswarm positions within each group
+    groups.forEach(g => {
+      const pts = [...g.items].sort((a, b) => a.age - b.age || a.c.localeCompare(b.c)).map(p => ({ p, x: sx(p.age), y: 0 }));
+      const placed = [];
+      pts.forEach(pt => {
+        const near = placed.filter(q => Math.abs(q.x - pt.x) < d);
+        const cands = [0];
+        near.forEach(q => { const h = Math.sqrt(Math.max(0, d * d - (pt.x - q.x) ** 2)); cands.push(q.y + h, q.y - h); });
+        cands.sort((a, b) => Math.abs(a) - Math.abs(b) || a - b);
+        pt.y = cands.find(y => near.every(q => (q.x - pt.x) ** 2 + (q.y - y) ** 2 >= d * d - 0.01));
+        placed.push(pt);
+      });
+      g.pts = pts;
+      g.maxAbs = Math.max(0, ...pts.map(q => Math.abs(q.y)));
+      // 2. which dots get a label: youngest, oldest and any highlighted
+      const young = pts[0], old = pts[pts.length - 1];
+      g.labels = pts.filter(q => q === young || q === old || hl.has(q.p.c)).map(q => {
+        const l1 = `${q.p.n.replace(/ \(acting\)$/, "")}, ${fmt(q.p.age)}`, l2 = q.p.c;
+        const w = Math.max(textW(l1, labelFont1), textW(l2, labelFont2));
+        let x0 = q.x - w / 2, anchorX = q.x, anchor = "middle";
+        if (x0 < padL) { x0 = padL; anchor = "start"; anchorX = padL; }
+        else if (x0 + w > W - padR) { x0 = W - padR - w; anchor = "end"; anchorX = W - padR; }
+        return { q, l1, l2, w, x0, x1: x0 + w, anchor, anchorX, level: 0 };
+      }).sort((a, b) => a.x0 - b.x0);
+      const lastEnd = [];
+      g.labels.forEach(L => {
+        let lv = 0;
+        while (lastEnd[lv] !== undefined && lastEnd[lv] + 10 > L.x0) lv++;
+        L.level = lv; lastEnd[lv] = L.x1;
+      });
+      g.levels = g.labels.length ? Math.max(...g.labels.map(L => L.level)) + 1 : 0;
+    });
+
+    // 3. vertical layout
+    const LEVEL_H = 40;
+    let cur = 6; const top = cur;
+    groups.forEach(g => {
+      g.titleY = cur + 15; cur += 26;
+      cur += g.levels ? g.levels * LEVEL_H + 8 : 4;
+      const half = Math.max(g.maxAbs + r, 14);
+      g.swarmTop = cur; g.baseY = cur + half; cur += 2 * half + 20;
+    });
+    const plotBottom = cur - 8;
+    const H = plotBottom + 28;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.style.height = H + "px";
+
+    let out = "";
+    // gridlines + tick labels
+    for (let a = AXIS_MIN + 10; a <= AXIS_MAX; a += 10) {   // no line or label at the axis start
+      out += `<line x1="${sx(a)}" x2="${sx(a)}" y1="${top}" y2="${plotBottom}" stroke="var(--grid)"/>`;
+      out += `<text x="${sx(a)}" y="${plotBottom + 18}" text-anchor="middle">${a}</text>`;
+    }
+    groups.forEach(g => {
+      out += `<text class="gtitle" x="${padL}" y="${g.titleY}">${esc(g.label)}</text>`;
+      // leader lines for labelled dots (drawn under the dots)
+      g.labels.forEach(L => {
+        const blockBottom = g.swarmTop - 8 - L.level * LEVEL_H;
+        L.blockBottom = blockBottom;
+        out += `<line x1="${L.q.x}" x2="${L.q.x}" y1="${blockBottom + 2}" y2="${g.baseY + L.q.y - r}" stroke="var(--muted)" stroke-width="1"/>`;
+      });
+      g.pts.filter(q => !hl.has(q.p.c)).concat(g.pts.filter(q => hl.has(q.p.c))).forEach(q => {
+        out += `<circle class="pt${hl.has(q.p.c) ? " hl" : ""}" data-c="${esc(q.p.c)}" cx="${q.x.toFixed(1)}" cy="${(g.baseY + q.y).toFixed(1)}" r="${r}"><title>${esc(q.p.c)}: ${fmt(q.p.age)}</title></circle>`;
+      });
+      g.labels.forEach(L => {
+        out += `<text class="lab1" x="${L.anchorX}" y="${L.blockBottom - 19}" text-anchor="${L.anchor}">${esc(L.l1)}</text>`;
+        out += `<text class="lab2" x="${L.anchorX}" y="${L.blockBottom - 3}" text-anchor="${L.anchor}">${esc(L.l2)}</text>`;
+      });
+    });
+    svg.innerHTML = out;
+  }
+
+  // ---- text that depends on the grouping ----
+  const asofText = today.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  function renderText() {
+    const regime = state.group === "regime";
+    const t = regime ? "Leader age, by political regime" : "Leader age, by region";
+    document.getElementById("title").textContent = t; document.title = t;
+    document.getElementById("lede").textContent =
+      "Each dot is a country, placed at the age of its current leader. Based on the person who holds main executive power: the prime minister, president, or monarch." +
+      (regime ? " Regimes follow V-Dem's Regimes of the World classification for 2025." : "");
+    document.getElementById("foot").textContent =
+      "Leader ages as of " + asofText + "." +
+      (regime ? " Regimes: V-Dem, Democracy Report v16 (2026), Regimes of the World, 2025; via Our World in Data." : "");
+  }
+
+  // ---- controls ----
+  const chipsEl = document.getElementById("chips");
+  function renderChips() {
+    chipsEl.innerHTML = [["region", "By region"], ["regime", "By political regime"]].map(([k, l]) =>
+      `<button type="button" class="chip" data-k="${k}" aria-pressed="${state.group === k}">${l}</button>`).join("");
+  }
+  chipsEl.addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    state.group = b.dataset.k; renderChips(); renderText(); renderPick(); draw();
+  });
+  const pickEl = document.getElementById("pick");
+  function renderPick() {
+    const names = people.filter(p => state.group === "region" || p.v !== null).map(p => p.c).sort((a, b) => a.localeCompare(b));
+    pickEl.innerHTML = `<option value="">None</option>` + names.map(n => `<option value="${esc(n)}"${state.highlight[0] === n ? " selected" : ""}>${esc(n)}</option>`).join("");
+  }
+  pickEl.addEventListener("change", () => { state.highlight = pickEl.value ? [pickEl.value] : []; draw(); });
+
+  // ---- tooltip ----
+  const byName = new Map(people.map(p => [p.c, p]));
+  function showTip(c, ev) {
+    const p = byName.get(c); if (!p) return;
+    tip.innerHTML = `<b>${esc(p.c)}</b>${esc(p.n)}<br>Age ${fmt(p.age)} years` +
+      (p.v !== null ? `<br>${REGIME[p.v]}` : "") + `<br>${esc(p.r)}`;
+    tip.style.display = "block";
+    let left = ev.clientX + 14, top = ev.clientY + 14;
+    if (left + 260 > innerWidth) left = ev.clientX - 264;
+    if (top + 110 > innerHeight) top = ev.clientY - 110;
+    tip.style.left = Math.max(4, left) + "px"; tip.style.top = Math.max(4, top) + "px";
+  }
+  const hit = ev => ev.target.closest && ev.target.closest(".pt");
+  svg.addEventListener("pointermove", ev => { const t = hit(ev); if (t) showTip(t.dataset.c, ev); else tip.style.display = "none"; });
+  svg.addEventListener("pointerdown", ev => { const t = hit(ev); if (t) showTip(t.dataset.c, ev); else tip.style.display = "none"; });
+  svg.addEventListener("pointerleave", () => { tip.style.display = "none"; });
+
+  renderChips(); renderText(); renderPick(); draw();
+  new ResizeObserver(draw).observe(plot);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+</script>
+</body>
+</html>
