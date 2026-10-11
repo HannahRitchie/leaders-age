@@ -69,6 +69,7 @@
   .legend span { display: inline-flex; align-items: center; gap: 8px; }
   .sw { width: 22px; height: 10px; background: var(--bar); border-radius: 2px; }
   .sw.edge { width: 3px; height: 14px; background: var(--bar-hi); }
+  .sw.lite { opacity: 0.4; }
 
   .axis {
     position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
@@ -92,6 +93,7 @@
     position: absolute; top: 4px; bottom: 4px; background: var(--bar);
     border-radius: 2px; min-width: 3px;
   }
+  .bar.interlude { opacity: 0.4; border-radius: 0; }
   .bar.current::after {
     content: ""; position: absolute; right: 0; top: -4px; bottom: -4px;
     width: 3px; background: var(--bar-hi); border-radius: 1px;
@@ -167,6 +169,7 @@
   <div class="legend">
     <span><i class="sw"></i> Time in office</span>
     <span><i class="sw edge"></i> Age today</span>
+    <span id="legend-interlude" style="display:none"><i class="sw lite"></i> Prime minister, between two presidencies</span>
   </div>
 
   <div id="chart" role="img" aria-label="Chart of world leaders' ages and time in office"></div>
@@ -179,7 +182,7 @@
     <h2>Who counts as the leader</h2>
     <p>The person who holds the main executive power: the prime minister in most parliamentary systems, the president in presidential and semi-presidential ones, and the monarch in Gulf and other executive monarchies. For Saudi Arabia that is Crown Prince Mohammed bin Salman (prime minister since 2022); King Salman, born 1935, remains head of state. Xi and Tô Lâm are counted from taking the top party post. Many ceremonial presidents and kings are not shown.</p>
     <h2>Terms</h2>
-    <p>Putin's 2008–2012 spell as prime minister appears as a gap. Erdoğan is one bar from 2003 (prime minister, then president from 2014), and Togo's Faure Gnassingbé likewise runs from 2005. Where a leader went straight from one office to another, the bar is continuous.</p>
+    <p>Putin's years as prime minister (2008–2012), between two presidencies, appear as a lighter segment and count towards his time in office: he has held one of Russia's two top posts without a break since 1999. Erdoğan is one bar from 2003 (prime minister, then president from 2014), and Togo's Faure Gnassingbé likewise runs from 2005. Where a leader went straight from one office to another, the bar is continuous.</p>
     <h2>Accuracy</h2>
     <p>Every birth date was checked against two independent sources (English Wikipedia and Wikidata), and every term start and end date against Wikipedia. That check corrected a number of dates from my first draft. Where the two sources disagreed I looked further.</p>
     <p>Two leaders have an official birth date that differs from other published ones, and I used the official one: Lee Jae-myung (22 December 1964, although other sources say about 8 December 1963) and Tarique Rahman (1968 on his national ID card; other sources say 1965 or 1967). For Mauritania's Ghazouani, Wikipedia and Wikidata differ by 27 days (4 or 31 December 1956) and I used the 4th. For acting or interim leaders (Tokayev, Japarov, Mirziyoyev, Delcy Rodríguez) the clock starts the day they took power.</p>
@@ -191,13 +194,14 @@
 
 <script>
   // Edit or add rows here. Dates are YYYY-MM-DD. A term with no end date is the current one.
-  // g: member of the G20.
+  // g: member of the G20.  A term with a third value "i" is an interlude: time in the other top post (e.g. prime minister)
+  // between two stints in the main one. It is drawn lighter and counts towards time in office.
   const L = (country, name, born, region, terms, opt = {}) => ({ country, name, born, region, terms, ...opt });
 
   const LEADERS = [
     // ---------- G20 ----------
     L("United States","Donald Trump","1946-06-14","North America",[["2017-01-20","2021-01-20"],["2025-01-20"]],{g:1}),
-    L("Russia","Vladimir Putin","1952-10-07","Europe",[["1999-12-31","2008-05-07"],["2012-05-07"]],{g:1}),
+    L("Russia","Vladimir Putin","1952-10-07","Europe",[["1999-12-31","2008-05-07"],["2008-05-07","2012-05-07","i"],["2012-05-07"]],{g:1}),
     L("China","Xi Jinping","1953-06-15","Asia",[["2012-11-15"]],{g:1}),
     L("India","Narendra Modi","1950-09-17","Asia",[["2014-05-26"]],{g:1}),
     L("Turkey","Recep Tayyip Erdoğan","1954-02-26","Asia",[["2003-03-14"]],{g:1}),
@@ -365,10 +369,10 @@
   const data = LEADERS.map(l => {
     const born = d(l.born);
     const ageNow = yrs(born, today);
-    const terms = l.terms.map(([s, e]) => {
+    const terms = l.terms.map(([s, e, k]) => {
       const a0 = yrs(born, d(s));
       const a1 = e ? yrs(born, d(e)) : ageNow;
-      return { a0, a1, s, e: e || null };
+      return { a0, a1, s, e: e || null, k: k || null };
     });
     const tenure = terms.reduce((sum, t) => sum + (t.a1 - t.a0), 0);
     const latestStart = d(terms[terms.length - 1].s).getTime();
@@ -444,17 +448,19 @@
     };
     rows = rows.sort(sorters[state.sort]);
 
+    document.getElementById("legend-interlude").style.display = rows.some(l => l.terms.some(t => t.k === "i")) ? "" : "none";
     document.getElementById("count").textContent =
       `${rows.length} ${rows.length === 1 ? "country" : "countries"}`;
 
     const html = rows.map(l => {
       const bars = l.terms.map(t => {
         const left = pct(t.a0), width = pct(t.a1) - pct(t.a0);
-        const title = `${longDate(t.s)} to ${t.e ? longDate(t.e) : "today"} (age ${fmt(t.a0)} to ${fmt(t.a1)})`;
-        return `<div class="bar${t.e ? "" : " current"}" style="left:${left}%; width:${width}%" title="${title}"></div>`;
+        const title = `${t.k === "i" ? "Prime minister, between two presidencies: " : ""}${longDate(t.s)} to ${t.e ? longDate(t.e) : "today"} (age ${fmt(t.a0)} to ${fmt(t.a1)})`;
+        return `<div class="bar${t.e ? "" : " current"}${t.k === "i" ? " interlude" : ""}" style="left:${left}%; width:${width}%" title="${title}"></div>`;
       }).join("");
       const first = l.terms[0];
-      const termsText = l.terms.length > 1 ? `${l.terms.length} terms · ` : "";
+      const nTerms = l.terms.filter(t => t.k !== "i").length;
+      const termsText = nTerms > 1 ? `${nTerms} terms · ` : "";
       return `
         <div class="row">
           <div class="who" title="${esc(l.name)} · ${termsText}${tenureText(l.tenure)}">

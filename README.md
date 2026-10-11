@@ -7,7 +7,8 @@ Open `index.html` (or the published site's home page) to see every chart with a 
 | File | Chart |
 |---|---|
 | `leader-age-gap-dotplot.html` | Which countries have the largest age gap between leader and the population? |
-| `leader-age-swarm.html` | What is the age of each country's leader? (by region or political regime) |
+| `leader-tenure-by-regime.html` | How long have leaders been in power, by political regime? |
+| `leader-age-swarm.html` | Leader age, by region (or political regime) |
 | `leader-age-range.html` | How old are leaders in each region? (youngest, median, oldest) |
 | `leaders-vs-population-scatter.html` | Do older populations have older leaders? |
 | `leaders-gantt-world.html` | How old are the world's leaders, and how long have they been in power? |
