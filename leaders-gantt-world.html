@@ -139,6 +139,8 @@
     .row { grid-template-columns: 1fr; row-gap: 3px; padding: 7px 0 9px; }
     .count { margin-left: 0; width: 100%; }
   }
+  .fn { color: var(--muted); font-size: 0.8125rem; margin: 10px 0 0; }
+  .fn[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -171,7 +173,8 @@
 
   <div id="chart" role="img" aria-label="Chart of world leaders' ages and time in office"></div>
 
-  <p class="embed-foot" id="embedfoot"></p>
+  <p class="fn" id="fn-pal" hidden>* Mahmoud Abbas is president of the State of Palestine, but the Palestinian Authority’s governing authority is largely limited to parts of the West Bank.</p>
+<p class="embed-foot" id="embedfoot"></p>
 
   <details class="notes">
     <summary>Notes, sources and caveats</summary>
@@ -185,7 +188,7 @@
     <p>Two leaders have an official birth date that differs from other published ones, and I used the official one: Lee Jae-myung (22 December 1964, although other sources say about 8 December 1963) and Tarique Rahman (1968 on his national ID card; other sources say 1965 or 1967). For Mauritania's Ghazouani, Wikipedia and Wikidata differ by 27 days (4 or 31 December 1956) and I used the 4th. For acting or interim leaders (Tokayev, Japarov, Mirziyoyev, Delcy Rodríguez) the clock starts the day they took power.</p>
     <p>Sweden's Kristersson and Romania's Bolojan lead caretaker governments, and Brazil's Lula stays until January 2027.</p>
     <h2>Not included</h2>
-    <p>Countries are left out where I could not establish the leader's birth date reliably. Credible sources disagree on the birth year of North Korea's Kim Jong Un, Oman's Sultan Haitham and Guinea's Mamady Doumbouya. I also left out Afghanistan, Benin, Botswana, Bulgaria, Burundi, Cape Verde, Colombia, Georgia, Grenada, Guinea-Bissau, Haiti, Iraq, Latvia, Lesotho, Libya, Lithuania, Madagascar, Mali, Mongolia, Niger, North Macedonia, Serbia, Seychelles, Suriname, Switzerland, Uruguay, Yemen, and most Pacific and Caribbean microstates. The charts cover UN member states. Palestine, a UN observer state, is left out: the leader's authority, the regime score and the population data refer to different territories, and it is flagged in the data file. Countries where the recognised government does not control all of its territory (for example Sudan, Somalia, Syria, Ukraine and Myanmar) are included and counted under the recognised government's leader.</p>
+    <p>Countries are left out where I could not establish the leader's birth date reliably. Credible sources disagree on the birth year of North Korea's Kim Jong Un, Oman's Sultan Haitham and Guinea's Mamady Doumbouya. I also left out Afghanistan, Benin, Botswana, Bulgaria, Burundi, Cape Verde, Colombia, Georgia, Grenada, Guinea-Bissau, Haiti, Iraq, Latvia, Lesotho, Libya, Lithuania, Madagascar, Mali, Mongolia, Niger, North Macedonia, Serbia, Seychelles, Suriname, Switzerland, Uruguay, Yemen, and most Pacific and Caribbean microstates. The charts cover UN member states plus Palestine, a UN observer state. Taiwan, Kosovo and the Holy See are not included. Countries where the recognised government does not control all of its territory (for example Sudan, Somalia, Syria, Ukraine and Myanmar) are included and counted under the recognised government's leader.</p>
   </details>
 </main>
 
@@ -258,6 +261,7 @@
     L("Israel","Benjamin Netanyahu","1949-10-21","Asia",[["1996-06-18","1999-07-06"],["2009-03-31","2021-06-13"],["2022-12-29"]]),
     L("Jordan","King Abdullah II","1962-01-30","Asia",[["1999-02-07"]]),
     L("Kazakhstan","Kassym-Jomart Tokayev","1953-05-17","Asia",[["2019-03-20"]]),
+    L("Palestine*","Mahmoud Abbas","1935-11-15","Asia",[["2005-01-15"]]),
     L("Kuwait","Emir Mishal Al-Ahmad","1940-09-27","Asia",[["2023-12-16"]]),
     L("Kyrgyzstan","Sadyr Japarov","1968-12-06","Asia",[["2020-10-15"]]),
     L("Laos","Thongloun Sisoulith","1945-11-10","Asia",[["2016-04-20"]]),
@@ -509,6 +513,15 @@
   document.getElementById("embedfoot").textContent =
     "Ages as of " + today.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) +
     ". Leader = the person who holds main executive power.";
+</script>
+<script>
+  (function () {
+    const el = document.getElementById("fn-pal");
+    const upd = () => { let on = false; try { on = !!(document.getElementById("chart").textContent.includes("Palestine*")); } catch (e) { on = true; } el.hidden = !on; };
+    const tgt = document.getElementById("chart");
+    if (tgt) new MutationObserver(upd).observe(tgt, { childList: true, subtree: true });
+    upd();
+  })();
 </script>
 </body>
 </html>
