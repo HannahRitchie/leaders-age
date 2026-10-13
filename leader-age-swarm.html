@@ -200,6 +200,8 @@
     const labelFont1 = "600 12.5px Inter, system-ui, sans-serif", labelFont2 = "400 12px Inter, system-ui, sans-serif";
     const hl = new Set(state.highlight);
 
+    const EXTRA = ["United States","China","India","Russia","Brazil","Germany","Japan","United Kingdom","Canada","Indonesia","Nigeria","France","Italy","Mexico","Australia","South Africa","Turkey","Saudi Arabia","Argentina","South Korea","Pakistan","Egypt","Iran","Israel","Ethiopia","Bangladesh","Ukraine","Poland","Spain","Vietnam"];
+    const LBL = q => `${q.p.n.replace(/ \(acting\)$/, "")}, ${fmt(q.p.age)}`;
     // 1. beeswarm positions within each group
     groups.forEach(g => {
       const pts = [...g.items].sort((a, b) => a.age - b.age || a.c.localeCompare(b.c)).map(p => ({ p, x: sx(p.age), y: 0 }));
@@ -216,20 +218,48 @@
       g.maxAbs = Math.max(0, ...pts.map(q => Math.abs(q.y)));
       // 2. which dots get a label: youngest, oldest and any highlighted
       const young = pts[0], old = pts[pts.length - 1];
-      g.labels = pts.filter(q => q === young || q === old || hl.has(q.p.c)).map(q => {
-        const l1 = `${q.p.n.replace(/ \(acting\)$/, "")}, ${fmt(q.p.age)}`, l2 = q.p.c;
+      // Labels: highlighted countries, the best-known countries, the youngest and oldest, then more well-known countries.
+      // Each label goes on the lowest row (and, if needed, shifted to one side of its line) where it overlaps no other label and
+      // no other label's line. Three placement styles are tried and the one that labels the most (weighted) is kept.
+      const mk = (q, mode) => {
+        const l1 = LBL(q), l2 = q.p.c;
         const w = Math.max(textW(l1, labelFont1), textW(l2, labelFont2));
-        let x0 = q.x - w / 2, anchorX = q.x, anchor = "middle";
+        let x0 = mode === 0 ? q.x - w / 2 : mode === 1 ? q.x - 4 : q.x + 4 - w;
+        let anchor = mode === 0 ? "middle" : mode === 1 ? "start" : "end";
+        let anchorX = mode === 0 ? q.x : mode === 1 ? q.x - 4 : q.x + 4;
         if (x0 < padL) { x0 = padL; anchor = "start"; anchorX = padL; }
         else if (x0 + w > W - padR) { x0 = W - padR - w; anchor = "end"; anchorX = W - padR; }
         return { q, l1, l2, w, x0, x1: x0 + w, anchor, anchorX, level: 0 };
-      }).sort((a, b) => a.x0 - b.x0);
-      const lastEnd = [];
-      g.labels.forEach(L => {
-        let lv = 0;
-        while (lastEnd[lv] !== undefined && lastEnd[lv] + 10 > L.x0) lv++;
-        L.level = lv; lastEnd[lv] = L.x1;
+      };
+      const byName = name => pts.find(t => t.p.c === name);
+      const hidden = q => pts.some(t => t !== q && t.y < q.y && Math.abs(t.x - q.x) < r + 1.5);
+      const runPlacement = modes => {
+        const labels = [];
+        const place = (q, maxL, wgt) => {
+          if (!q || labels.some(L => L.q === q)) return;
+          for (let lv = 0; lv < maxL; lv++) for (const mode of modes) {
+            const L = mk(q, mode);
+            if (q.x < L.x0 - 1 || q.x > L.x1 + 1) continue;
+            const ok = labels.every(M =>
+              M.level === lv ? (M.x1 + 10 <= L.x0 || L.x1 + 10 <= M.x0)
+              : M.level < lv ? !(q.x > M.x0 - 6 && q.x < M.x1 + 6)
+              : !(M.q.x > L.x0 - 6 && M.q.x < L.x1 + 6));
+            if (ok) { L.level = lv; L.wgt = wgt; labels.push(L); return; }
+          }
+        };
+        pts.filter(q => hl.has(q.p.c)).forEach(q => place(q, 8, 100));
+        EXTRA.slice(0, 6).forEach(n => place(byName(n), 3, 4));
+        place(young, 3, 3); place(old, 3, 3);
+        EXTRA.slice(6).forEach(n => { const q = byName(n); if (q && !hidden(q)) place(q, 2, 1); });
+        return labels;
+      };
+      let best = null, bestScore = -1;
+      [[0, 1, 2], [1, 2, 0], [2, 1, 0]].forEach(m => {
+        const labels = runPlacement(m);
+        const score = labels.reduce((s, L) => s + L.wgt, 0) - 0.01 * labels.reduce((s, L) => s + L.level, 0);
+        if (score > bestScore) { best = labels; bestScore = score; }
       });
+      g.labels = best.sort((a, b) => a.x0 - b.x0);
       g.levels = g.labels.length ? Math.max(...g.labels.map(L => L.level)) + 1 : 0;
     });
 
